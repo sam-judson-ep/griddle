@@ -52,12 +52,11 @@
   #viewport { position: relative; height: 100%; overflow: hidden; background: #ffffff; display: flex; flex-direction: column; }
   #mobile-nav-bar { width: 100%; flex-shrink: 0; background: #ffffff; display: none; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; color: #aaa; letter-spacing: 0.5px; border-bottom: 1px solid #eee; }
   #content-area { flex: 1; display: flex; overflow: hidden; position: relative; background: #ffffff; }
-  #grid-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 1; display: flex; }
+  #grid-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 0; display: flex; }
   #nav-panel { background: #ffffff; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #aaa; font-weight: 500; letter-spacing: 0.5px; border-right: 1px solid #eee; position: relative; z-index: 2; }
   #nav-panel .nav-label { writing-mode: vertical-rl; transform: rotate(180deg); }
   #layout-panes { flex: 1; position: relative; overflow: hidden; z-index: 2; }
-
-  .pane-box { position: absolute; background: #fff; border-radius: 6px; }
+  .pane-box { position: absolute; background: #fff; border-radius: 6px; z-index: 1; }
   .pane-num { position: absolute; top: 12px; left: 12px; width: 26px; height: 26px; border-radius: 50%; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
   #bp-badge { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 999px; pointer-events: none; z-index: 20; white-space: nowrap; }
   #width-label { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.6); color: #fff; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px; pointer-events: none; z-index: 100; white-space: nowrap; }
@@ -121,9 +120,9 @@
       <div id="viewport">
         <div id="mobile-nav-bar">NAV</div>
         <div id="content-area">
-          <div id="grid-overlay"></div>
           <div id="nav-panel"><span class="nav-label">NAV</span></div>
           <div id="layout-panes">
+            <div id="grid-overlay"></div>
             <div id="bp-badge"></div>
           </div>
         </div>
@@ -141,8 +140,8 @@
 </div>
 
 <script>
-const MAX_BODY   = 1344;
-const INSET      = 60;
+const MAX_BODY     = 1344;
+const INSET        = 60;
 const MOBILE_TOP_H = 64;
 
 const NAV_WIDTHS = { none: 0, primary: 80, expanded: 240, 'mobile-top': 0 };
@@ -163,9 +162,6 @@ const BPS = [
   { maxW: Infinity, cols: 12, margin: 96, gutter: 20, colColor: 'rgba(190,240,210,0.65)', badgeBg: '#90d8aa', badgeText: '#0a4a22', label: 'xl  1408px+' },
 ];
 
-// paneSpans: explicit [span, span, ...] per bpIdx for side-by-side mode
-// stackBelow: stack vertically when bpIdx <= this
-// wrapAt: 2-col wrap when bpIdx <= this (and > stackBelow)
 const LAYOUTS = [
   { id: 'full',     label: 'Full-width' },
   { id: 'narrow',   label: 'Narrow', narrowSpans: [4,6,8,8,6] },
@@ -173,8 +169,8 @@ const LAYOUTS = [
   { id: '1t2t',     label: 'One-third / Two-thirds',       paneRatios:[1,2], stackBelow:1 },
   { id: 'half',     label: 'Half / Half',                  paneRatios:[1,1], stackBelow:1 },
   { id: '2t1t',     label: 'Two-thirds / One-third',       paneRatios:[2,1], stackBelow:1 },
-  { id: '3q1q', label: 'Three-quarters / One-quarter', paneRatios:[3,1], stackBelow:1, paneSpans:{ 2:[8,4], 3:[9,3], 4:[9,3] } },
-  { id: 'thirds', label: 'One-third / One-third / One-third', paneRatios:[1,1,1], stackBelow:1, cardHeight:200 },
+  { id: '3q1q',     label: 'Three-quarters / One-quarter', paneRatios:[3,1], stackBelow:1, paneSpans:{ 2:[8,4], 3:[9,3], 4:[9,3] } },
+  { id: 'thirds',   label: 'One-third / One-third / One-third', paneRatios:[1,1,1], stackBelow:1, cardHeight:200 },
   { id: 'quarters', label: 'Quarters', paneRatios:[1,1,1,1], stackBelow:0, wrapAt:1, wrapMdAt:2, cardHeight:200 },
 ];
 
@@ -191,22 +187,28 @@ const $wLabel  = document.getElementById('width-label');
 const $badge   = document.getElementById('bp-badge');
 const $stage   = document.getElementById('stage');
 
-function getBP(w)    { return BPS.find(b => w <= b.maxW); }
+function getBP(w) { return BPS.find(b => w <= b.maxW); }
 function getBPIdx(b) { return BPS.indexOf(b); }
 
-// px position of left edge of column c
-function colLeft(bp, contW, c) {
-  const inner  = Math.min(contW, MAX_BODY);
-  const outerM = (contW - inner) / 2;
-  const colW   = (inner - 2*bp.margin - (bp.cols-1)*bp.gutter) / bp.cols;
-  return outerM + bp.margin + c*(colW + bp.gutter);
+// bp.margin is a minimum. Above MAX_BODY the surplus is shared equally,
+// growing the margin so content stays centred and never exceeds MAX_BODY wide.
+// Grid width grows with the container, respecting minimum margins, capped at MAX_BODY.
+function gridWidth(bp, w) {
+  return Math.min(w - 2*bp.margin, MAX_BODY);
 }
-// px position of right edge of span cols starting at c
-function colRight(bp, contW, c, span) {
-  const inner  = Math.min(contW, MAX_BODY);
-  const outerM = (contW - inner) / 2;
-  const colW   = (inner - 2*bp.margin - (bp.cols-1)*bp.gutter) / bp.cols;
-  return outerM + bp.margin + c*(colW + bp.gutter) + span*colW + (span-1)*bp.gutter;
+// Left offset = centres the grid within w.
+function effectiveMargin(bp, w) {
+  return (w - gridWidth(bp, w)) / 2;
+}
+function colWidth(bp, w) {
+  return (gridWidth(bp, w) - (bp.cols-1)*bp.gutter) / bp.cols;
+}
+function colLeft(bp, w, c) {
+  return effectiveMargin(bp, w) + c*(colWidth(bp, w) + bp.gutter);
+}
+function colRight(bp, w, c, span) {
+  const cw = colWidth(bp, w);
+  return effectiveMargin(bp, w) + c*(cw + bp.gutter) + span*cw + (span-1)*bp.gutter;
 }
 
 function makePaneBox(left, right, top, bottom, idx) {
@@ -214,7 +216,7 @@ function makePaneBox(left, right, top, bottom, idx) {
   const pw  = $panes.offsetWidth;
   const box = document.createElement('div');
   box.className = 'pane-box';
-  box.style.cssText = `left:${left}px; right:${pw-right}px; top:${top}px; bottom:${bottom}px; border:1.5px solid ${c.b};`;
+  box.style.cssText = `left:${left}px; right:${pw - right}px; top:${top}px; bottom:${bottom}px; border:1.5px solid ${c.b};`;
   const num = document.createElement('div');
   num.className = 'pane-num';
   num.textContent = String(idx+1);
@@ -227,122 +229,102 @@ function render() {
   const navW     = NAV_WIDTHS[S.nav];
   const isMobTop = S.nav === 'mobile-top';
   const vpW      = S.vpWidth;
-  const contW    = Math.max(vpW - navW, 0);
-  const bp       = getBP(contW);
-  const bpIdx    = getBPIdx(bp);
 
+  // Apply VP width and nav visibility first, so the browser lays out
+  // #layout-panes before we measure it.
   $vp.style.width        = vpW + 'px';
   $mobileN.style.display = isMobTop ? 'flex' : 'none';
   $mobileN.style.height  = MOBILE_TOP_H + 'px';
   $navP.style.width      = navW + 'px';
-  $navP.style.background = '#ffffff';
   $navP.style.display    = (!isMobTop && navW > 0) ? 'flex' : 'none';
   $wLabel.textContent    = vpW + 'px';
-  $badge.textContent     = bp.label;
+
+  // Read the actual rendered width of #layout-panes — this is the single
+  // source of truth for all column geometry. It already accounts for the
+  // nav panel, borders, and any sub-pixel rounding the browser applies.
+  const w = $panes.offsetWidth;
+
+  const bp    = getBP(w);
+  const bpIdx = getBPIdx(bp);
+
+  $badge.textContent      = bp.label;
   $badge.style.background = bp.badgeBg;
   $badge.style.color      = bp.badgeText;
 
-  // Grid overlay
-  $grid.innerHTML = '';
+  // Grid overlay: spans full #layout-panes, columns inset via padding
+  Array.from($grid.children).forEach(el => el.remove());
   $grid.style.display = S.showCols ? 'flex' : 'none';
   if (S.showCols) {
-    const inner  = Math.min(contW, MAX_BODY);
-    const outerM = (contW - inner) / 2;
-    $grid.style.left   = (navW + outerM + bp.margin) + 'px';
-    $grid.style.right  = (outerM + bp.margin) + 'px';
-    $grid.style.top = $grid.style.bottom = '0';
-    $grid.style.width  = 'auto';
+    const m = effectiveMargin(bp, w);
+    $grid.style.cssText = `display:flex; position:absolute; inset:0; pointer-events:none; z-index:1; padding-left:${m}px; padding-right:${m}px;`;
     for (let i = 0; i < bp.cols; i++) {
       const col = document.createElement('div');
-      col.style.cssText = `flex:1; background:${bp.colColor}; ${i < bp.cols-1 ? `margin-right:${bp.gutter}px` : ''}`;
+      col.style.cssText = `flex:1; background:${bp.colColor};${i < bp.cols-1 ? ` margin-right:${bp.gutter}px` : ''}`;
       $grid.appendChild(col);
     }
   }
 
-  // Clear pane boxes (keep badge)
-  Array.from($panes.children).forEach(el => { if (el.id !== 'bp-badge') el.remove(); });
+  // Clear pane boxes, keep badge
+  Array.from($panes.children).forEach(el => { if (el.id !== 'bp-badge' && el.id !== 'grid-overlay') el.remove(); });
 
   const layout = LAYOUTS.find(l => l.id === S.layoutId);
   const paneH  = $panes.offsetHeight || 600;
+  const GAP    = 20;
+  const cardH  = layout.cardHeight || null;
 
   if (S.layoutId === 'full') {
-    const L = colLeft(bp, contW, 0);
-    const R = colRight(bp, contW, 0, bp.cols);
-    makePaneBox(L, R, INSET, INSET, 0);
+    makePaneBox(colLeft(bp,w,0), colRight(bp,w,0,bp.cols), INSET, INSET, 0);
 
   } else if (S.layoutId === 'narrow') {
     const span  = layout.narrowSpans[bpIdx];
     const start = Math.floor((bp.cols - span) / 2);
-    const L     = colLeft(bp, contW, start);
-    const R     = colRight(bp, contW, start, span);
-    makePaneBox(L, R, INSET, INSET, 0);
+    makePaneBox(colLeft(bp,w,start), colRight(bp,w,start,span), INSET, INSET, 0);
 
   } else if (layout.paneRatios) {
-    const ratios  = layout.paneRatios;
-    const stacked = bpIdx <= layout.stackBelow;
-    const wrapped   = !stacked && layout.wrapAt !== undefined && bpIdx <= layout.wrapAt;
+    const ratios    = layout.paneRatios;
+    const stacked   = bpIdx <= layout.stackBelow;
+    const wrapped   = !stacked && layout.wrapAt   !== undefined && bpIdx <= layout.wrapAt;
     const wrappedMd = !stacked && !wrapped && layout.wrapMdAt !== undefined && bpIdx <= layout.wrapMdAt;
 
-    const GAP      = 20;
-    const cardH    = layout.cardHeight || null;
-
     if (stacked) {
-      const n      = ratios.length;
-      const slotH  = cardH || (paneH - INSET*2 - (n-1)*GAP) / n;
-      const L      = colLeft(bp, contW, 0);
-      const R      = colRight(bp, contW, 0, bp.cols);
+      const n     = ratios.length;
+      const slotH = cardH || (paneH - INSET*2 - (n-1)*GAP) / n;
+      const L = colLeft(bp,w,0), R = colRight(bp,w,0,bp.cols);
       ratios.forEach((_, i) => {
-        const top    = INSET + i*(slotH+GAP);
-        const bottom = paneH - (top + slotH);
-        makePaneBox(L, R, top, bottom, i);
+        const top = INSET + i*(slotH+GAP);
+        makePaneBox(L, R, top, paneH-(top+slotH), i);
       });
 
     } else if (wrapped) {
-      const perRow = 2;
+      const perRow = 2, halfC = bp.cols / perRow;
       const rows   = Math.ceil(ratios.length / perRow);
       const rowH   = cardH || (paneH - INSET*2 - (rows-1)*GAP) / rows;
-      const halfC  = bp.cols / perRow;
       ratios.forEach((_, i) => {
-        const col  = i % perRow;
-        const row  = Math.floor(i / perRow);
-        const L    = colLeft(bp, contW, col * halfC);
-        const R    = colRight(bp, contW, col * halfC, halfC);
-        const top  = INSET + row*(rowH+GAP);
-        const bot  = paneH - (top + rowH);
-        makePaneBox(L, R, top, bot, i);
+        const col = i % perRow, row = Math.floor(i / perRow);
+        const top = INSET + row*(rowH+GAP);
+        makePaneBox(colLeft(bp,w,col*halfC), colRight(bp,w,col*halfC,halfC), top, paneH-(top+rowH), i);
       });
 
     } else if (wrappedMd) {
-      // 3-col wrap at md: 3 cards on row 1, remainder on row 2
-      const perRow = 3;
+      const perRow = 3, colSpan = bp.cols / perRow;
       const rows   = Math.ceil(ratios.length / perRow);
       const rowH   = cardH || 200;
-      const colSpan = bp.cols / perRow; // 4 cols each at 12-col grid
       ratios.forEach((_, i) => {
-        const col  = i % perRow;
-        const row  = Math.floor(i / perRow);
-        const L    = colLeft(bp, contW, col * colSpan);
-        const R    = colRight(bp, contW, col * colSpan, colSpan);
-        const top  = INSET + row*(rowH+GAP);
-        const bot  = paneH - (top + rowH);
-        makePaneBox(L, R, top, bot, i);
+        const col = i % perRow, row = Math.floor(i / perRow);
+        const top = INSET + row*(rowH+GAP);
+        makePaneBox(colLeft(bp,w,col*colSpan), colRight(bp,w,col*colSpan,colSpan), top, paneH-(top+rowH), i);
       });
 
     } else {
-      // Side by side — use paneSpans if defined for this bpIdx, else proportional
       const total = ratios.reduce((a,b) => a+b, 0);
       const spans = (layout.paneSpans && layout.paneSpans[bpIdx])
         ? layout.paneSpans[bpIdx]
         : ratios.map(r => Math.round(r / total * bp.cols));
-
-      let startCol = 0;
+      let sc = 0;
       spans.forEach((span, i) => {
-        const L      = colLeft(bp, contW, startCol);
-        const R      = colRight(bp, contW, startCol, span);
-        const top    = INSET;
         const bottom = cardH ? paneH - INSET - cardH : INSET;
-        makePaneBox(L, R, top, bottom, i);
-        startCol += span;
+        makePaneBox(colLeft(bp,w,sc), colRight(bp,w,sc,span), INSET, bottom, i);
+        sc += span;
       });
     }
   }
@@ -395,7 +377,7 @@ function setColumns(show) {
   S.showCols = show;
   document.getElementById('cols-label').textContent = show ? 'Show columns' : 'Hide columns';
   document.getElementById('chk-show').style.display = show ? 'inline' : 'none';
-  document.getElementById('chk-hide').style.display = show ? 'none' : 'inline';
+  document.getElementById('chk-hide').style.display = show ? 'none'   : 'inline';
   toggleDD('dd-cols'); render();
 }
 
@@ -408,32 +390,27 @@ function setNav(val) {
   toggleDD('dd-nav'); render();
 }
 
-const NAV_DESKTOP = ['none', 'primary', 'expanded'];
+const NAV_DESKTOP = ['none','primary','expanded'];
 const NAV_MOBILE  = ['mobile-top'];
 
 function autoNav() {
   const isSmall = S.vpWidth < 1024;
-  if (isSmall && NAV_DESKTOP.includes(S.nav)) {
-    S.nav = 'mobile-top';
-    updateNavUI();
-  } else if (!isSmall && NAV_MOBILE.includes(S.nav)) {
-    S.nav = 'primary';
-    updateNavUI();
-  }
+  if (isSmall && NAV_DESKTOP.includes(S.nav))      { S.nav = 'mobile-top'; updateNavUI(); }
+  else if (!isSmall && NAV_MOBILE.includes(S.nav)) { S.nav = 'primary';    updateNavUI(); }
 }
-
 function updateNavUI() {
   document.getElementById('nav-label').textContent = NAV_LABELS[S.nav];
   ['none','primary','expanded','mobile-top'].forEach(k => {
-    document.getElementById('chk-nav-'+k).style.display = k === S.nav ? 'inline' : 'none';
+    document.getElementById('chk-nav-'+k).style.display = k===S.nav ? 'inline' : 'none';
   });
 }
+
 let dragging=null, dragX0=0, dragW0=0;
 function dragStart(e, side) {
   dragging=side; dragX0=e.clientX??e.touches[0].clientX; dragW0=S.vpWidth; e.preventDefault();
 }
-document.getElementById('handle-left').addEventListener('mousedown',  e=>dragStart(e,'left'));
-document.getElementById('handle-right').addEventListener('mousedown', e=>dragStart(e,'right'));
+document.getElementById('handle-left').addEventListener('mousedown',   e=>dragStart(e,'left'));
+document.getElementById('handle-right').addEventListener('mousedown',  e=>dragStart(e,'right'));
 document.getElementById('handle-left').addEventListener('touchstart',  e=>dragStart(e,'left'),{passive:false});
 document.getElementById('handle-right').addEventListener('touchstart', e=>dragStart(e,'right'),{passive:false});
 document.addEventListener('mousemove', e => {
@@ -462,3 +439,4 @@ window.addEventListener('resize', () => {
 </script>
 </body>
 </html>
+
