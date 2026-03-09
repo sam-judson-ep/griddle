@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Griddle</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f0f0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; user-select: none; }
+
+  #toolbar {
+    height: 52px; background: #F8FBFF; border-bottom: 1px solid #e5e5e5;
+    display: flex; align-items: center; padding: 0 16px; gap: 10px; flex-shrink: 0; z-index: 100;
+  }
+  #logo { font-weight: 800; font-size: 18px; letter-spacing: -0.5px; margin-right: 8px; }
+  .pill-btn {
+    display: flex; align-items: center; gap: 6px; padding: 6px 12px;
+    border: 1.5px solid #d0d0d0; border-radius: 999px; background: #fff;
+    font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap;
+  }
+  .pill-btn:hover { border-color: #999; }
+  .dropdown-wrap { position: relative; }
+  .dropdown-menu {
+    display: none; position: absolute; top: calc(100% + 6px); left: 0;
+    background: #fff; border: 1.5px solid #d0d0d0; border-radius: 12px;
+    padding: 6px; min-width: 200px; z-index: 9999; box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  }
+  .dropdown-menu.open { display: block; }
+  .dropdown-item {
+    padding: 8px 12px; border-radius: 8px; font-size: 13px; cursor: pointer;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .dropdown-item:hover { background: #f5f5f5; }
+  .check { font-size: 12px; }
+  .dropdown-divider { height: 1px; background: #eee; margin: 4px 6px; }
+  .dropdown-group-label { padding: 6px 12px 2px; font-size: 11px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  #stage { flex: 1; overflow: hidden; display: flex; align-items: stretch; position: relative; }
+  #vp-outer { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+  #vp-track { position: relative; display: flex; align-items: center; height: 100%; }
+
+  .handle {
+    width: 28px; height: 28px; border-radius: 50%; background: #5b5bd6;
+    cursor: ew-resize; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    z-index: 50; transition: transform 0.1s;
+  }
+  .handle:hover { transform: scale(1.15); }
+  .handle svg { pointer-events: none; }
+  #handle-left  { margin-right: -14px; }
+  #handle-right { margin-left:  -14px; }
+
+  #viewport { position: relative; height: 100%; overflow: hidden; background: #ffffff; display: flex; flex-direction: column; }
+  #mobile-nav-bar { width: 100%; flex-shrink: 0; background: #ffffff; display: none; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; color: #aaa; letter-spacing: 0.5px; border-bottom: 1px solid #eee; }
+  #content-area { flex: 1; display: flex; overflow: hidden; position: relative; background: #ffffff; }
+  #grid-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 1; display: flex; }
+  #nav-panel { background: #ffffff; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #aaa; font-weight: 500; letter-spacing: 0.5px; border-right: 1px solid #eee; position: relative; z-index: 2; }
+  #nav-panel .nav-label { writing-mode: vertical-rl; transform: rotate(180deg); }
+  #layout-panes { flex: 1; position: relative; overflow: hidden; z-index: 2; }
+
+  .pane-box { position: absolute; background: #fff; border-radius: 6px; }
+  .pane-num { position: absolute; top: 12px; left: 12px; width: 26px; height: 26px; border-radius: 50%; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  #bp-badge { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 999px; pointer-events: none; z-index: 20; white-space: nowrap; }
+  #width-label { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.6); color: #fff; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px; pointer-events: none; z-index: 100; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<div id="toolbar">
+  <div id="logo">GRIDDLE</div>
+  <div class="dropdown-wrap" id="dd-layout">
+    <button class="pill-btn" onclick="toggleDD('dd-layout')">
+      <span id="layout-label">Full-width</span>
+      <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" stroke="#555" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+    </button>
+    <div class="dropdown-menu" id="dd-layout-menu"></div>
+  </div>
+  <div class="dropdown-wrap" id="dd-vp">
+    <button class="pill-btn" onclick="toggleDD('dd-vp')">
+      <span id="vp-label">1200</span>
+      <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" stroke="#555" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+    </button>
+    <div class="dropdown-menu" id="dd-vp-menu"></div>
+  </div>
+  <div class="dropdown-wrap" id="dd-cols">
+    <button class="pill-btn" onclick="toggleDD('dd-cols')">
+      <span id="cols-label">Show columns</span>
+      <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" stroke="#555" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+    </button>
+    <div class="dropdown-menu" id="dd-cols-menu">
+      <div class="dropdown-item" onclick="setColumns(true)">Show columns <span class="check" id="chk-show">✓</span></div>
+      <div class="dropdown-item" onclick="setColumns(false)">Hide columns <span class="check" id="chk-hide" style="display:none">✓</span></div>
+    </div>
+  </div>
+  <div class="dropdown-wrap" id="dd-nav">
+    <button class="pill-btn" onclick="toggleDD('dd-nav')">
+      <span id="nav-label">Primary nav</span>
+      <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" stroke="#555" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+    </button>
+    <div class="dropdown-menu" id="dd-nav-menu">
+      <div class="dropdown-group-label">Desktop</div>
+      <div class="dropdown-item" onclick="setNav('none')">No nav <span class="check" id="chk-nav-none" style="display:none">✓</span></div>
+      <div class="dropdown-item" onclick="setNav('primary')">Primary nav (80px) <span class="check" id="chk-nav-primary">✓</span></div>
+      <div class="dropdown-item" onclick="setNav('expanded')">Expanded nav (240px) <span class="check" id="chk-nav-expanded" style="display:none">✓</span></div>
+      <div class="dropdown-divider"></div>
+      <div class="dropdown-group-label">Mobile</div>
+      <div class="dropdown-item" onclick="setNav('mobile-top')">Mobile top bar (64px) <span class="check" id="chk-nav-mobile-top" style="display:none">✓</span></div>
+    </div>
+  </div>
+</div>
+
+<div id="stage">
+  <div id="vp-outer">
+    <div id="vp-track">
+      <div class="handle" id="handle-left">
+        <svg width="10" height="12" viewBox="0 0 10 12" fill="none">
+          <line x1="2" y1="1" x2="2" y2="11" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="5" y1="1" x2="5" y2="11" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="8" y1="1" x2="8" y2="11" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div id="viewport">
+        <div id="mobile-nav-bar">NAV</div>
+        <div id="content-area">
+          <div id="grid-overlay"></div>
+          <div id="nav-panel"><span class="nav-label">NAV</span></div>
+          <div id="layout-panes">
+            <div id="bp-badge"></div>
+          </div>
+        </div>
+        <div id="width-label"></div>
+      </div>
+      <div class="handle" id="handle-right">
+        <svg width="10" height="12" viewBox="0 0 10 12" fill="none">
+          <line x1="2" y1="1" x2="2" y2="11" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="5" y1="1" x2="5" y2="11" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="8" y1="1" x2="8" y2="11" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const MAX_BODY   = 1344;
+const INSET      = 60;
+const MOBILE_TOP_H = 64;
+
+const NAV_WIDTHS = { none: 0, primary: 80, expanded: 240, 'mobile-top': 0 };
+const NAV_LABELS = { none: 'No nav', primary: 'Primary nav', expanded: 'Expanded nav', 'mobile-top': 'Mobile top bar' };
+
+const PC = [
+  { b: '#5b5bd6', t: '#fff' },
+  { b: '#d6395b', t: '#fff' },
+  { b: '#d67a1a', t: '#fff' },
+  { b: '#1a9e5c', t: '#fff' },
+];
+
+const BPS = [
+  { maxW: 575,      cols: 4,  margin: 20, gutter: 20, colColor: 'rgba(252,209,220,0.7)',  badgeBg: '#f9a8c0', badgeText: '#7a1a36', label: 'xs  0–575px' },
+  { maxW: 767,      cols: 8,  margin: 24, gutter: 20, colColor: 'rgba(252,209,200,0.7)',  badgeBg: '#f9b8a0', badgeText: '#7a2a10', label: 'sm  576–767px' },
+  { maxW: 1151,     cols: 12, margin: 32, gutter: 20, colColor: 'rgba(220,220,255,0.65)', badgeBg: '#c4c4f5', badgeText: '#2a2a7a', label: 'md  768–1151px' },
+  { maxW: 1407,     cols: 12, margin: 72, gutter: 20, colColor: 'rgba(190,220,255,0.65)', badgeBg: '#90c4f5', badgeText: '#0a3a6a', label: 'lg  1152–1407px' },
+  { maxW: Infinity, cols: 12, margin: 96, gutter: 20, colColor: 'rgba(190,240,210,0.65)', badgeBg: '#90d8aa', badgeText: '#0a4a22', label: 'xl  1408px+' },
+];
+
+// paneSpans: explicit [span, span, ...] per bpIdx for side-by-side mode
+// stackBelow: stack vertically when bpIdx <= this
+// wrapAt: 2-col wrap when bpIdx <= this (and > stackBelow)
+const LAYOUTS = [
+  { id: 'full',     label: 'Full-width' },
+  { id: 'narrow',   label: 'Narrow', narrowSpans: [4,6,8,8,6] },
+  { id: '1q3q',     label: 'One-quarter / Three-quarters', paneRatios:[1,3], stackBelow:1, paneSpans:{ 2:[4,8], 3:[3,9], 4:[3,9] } },
+  { id: '1t2t',     label: 'One-third / Two-thirds',       paneRatios:[1,2], stackBelow:1 },
+  { id: 'half',     label: 'Half / Half',                  paneRatios:[1,1], stackBelow:1 },
+  { id: '2t1t',     label: 'Two-thirds / One-third',       paneRatios:[2,1], stackBelow:1 },
+  { id: '3q1q', label: 'Three-quarters / One-quarter', paneRatios:[3,1], stackBelow:1, paneSpans:{ 2:[8,4], 3:[9,3], 4:[9,3] } },
+  { id: 'thirds', label: 'One-third / One-third / One-third', paneRatios:[1,1,1], stackBelow:1, cardHeight:200 },
+  { id: 'quarters', label: 'Quarters', paneRatios:[1,1,1,1], stackBelow:0, wrapAt:1, wrapMdAt:2, cardHeight:200 },
+];
+
+const VP_PRESETS = [320, 375, 390, 430, 576, 768, 1024, 1152, 1280, 1408, 1536];
+
+const S = { vpWidth: 1200, layoutId: 'full', showCols: true, nav: 'primary' };
+
+const $vp      = document.getElementById('viewport');
+const $grid    = document.getElementById('grid-overlay');
+const $navP    = document.getElementById('nav-panel');
+const $mobileN = document.getElementById('mobile-nav-bar');
+const $panes   = document.getElementById('layout-panes');
+const $wLabel  = document.getElementById('width-label');
+const $badge   = document.getElementById('bp-badge');
+const $stage   = document.getElementById('stage');
+
+function getBP(w)    { return BPS.find(b => w <= b.maxW); }
+function getBPIdx(b) { return BPS.indexOf(b); }
+
+// px position of left edge of column c
+function colLeft(bp, contW, c) {
+  const inner  = Math.min(contW, MAX_BODY);
+  const outerM = (contW - inner) / 2;
+  const colW   = (inner - 2*bp.margin - (bp.cols-1)*bp.gutter) / bp.cols;
+  return outerM + bp.margin + c*(colW + bp.gutter);
+}
+// px position of right edge of span cols starting at c
+function colRight(bp, contW, c, span) {
+  const inner  = Math.min(contW, MAX_BODY);
+  const outerM = (contW - inner) / 2;
+  const colW   = (inner - 2*bp.margin - (bp.cols-1)*bp.gutter) / bp.cols;
+  return outerM + bp.margin + c*(colW + bp.gutter) + span*colW + (span-1)*bp.gutter;
+}
+
+function makePaneBox(left, right, top, bottom, idx) {
+  const c   = PC[idx % PC.length];
+  const pw  = $panes.offsetWidth;
+  const box = document.createElement('div');
+  box.className = 'pane-box';
+  box.style.cssText = `left:${left}px; right:${pw-right}px; top:${top}px; bottom:${bottom}px; border:1.5px solid ${c.b};`;
+  const num = document.createElement('div');
+  num.className = 'pane-num';
+  num.textContent = String(idx+1);
+  num.style.cssText = `background:${c.b}; color:${c.t};`;
+  box.appendChild(num);
+  $panes.appendChild(box);
+}
+
+function render() {
+  const navW     = NAV_WIDTHS[S.nav];
+  const isMobTop = S.nav === 'mobile-top';
+  const vpW      = S.vpWidth;
+  const contW    = Math.max(vpW - navW, 0);
+  const bp       = getBP(contW);
+  const bpIdx    = getBPIdx(bp);
+
+  $vp.style.width        = vpW + 'px';
+  $mobileN.style.display = isMobTop ? 'flex' : 'none';
+  $mobileN.style.height  = MOBILE_TOP_H + 'px';
+  $navP.style.width      = navW + 'px';
+  $navP.style.background = '#ffffff';
+  $navP.style.display    = (!isMobTop && navW > 0) ? 'flex' : 'none';
+  $wLabel.textContent    = vpW + 'px';
+  $badge.textContent     = bp.label;
+  $badge.style.background = bp.badgeBg;
+  $badge.style.color      = bp.badgeText;
+
+  // Grid overlay
+  $grid.innerHTML = '';
+  $grid.style.display = S.showCols ? 'flex' : 'none';
+  if (S.showCols) {
+    const inner  = Math.min(contW, MAX_BODY);
+    const outerM = (contW - inner) / 2;
+    $grid.style.left   = (navW + outerM + bp.margin) + 'px';
+    $grid.style.right  = (outerM + bp.margin) + 'px';
+    $grid.style.top = $grid.style.bottom = '0';
+    $grid.style.width  = 'auto';
+    for (let i = 0; i < bp.cols; i++) {
+      const col = document.createElement('div');
+      col.style.cssText = `flex:1; background:${bp.colColor}; ${i < bp.cols-1 ? `margin-right:${bp.gutter}px` : ''}`;
+      $grid.appendChild(col);
+    }
+  }
+
+  // Clear pane boxes (keep badge)
+  Array.from($panes.children).forEach(el => { if (el.id !== 'bp-badge') el.remove(); });
+
+  const layout = LAYOUTS.find(l => l.id === S.layoutId);
+  const paneH  = $panes.offsetHeight || 600;
+
+  if (S.layoutId === 'full') {
+    const L = colLeft(bp, contW, 0);
+    const R = colRight(bp, contW, 0, bp.cols);
+    makePaneBox(L, R, INSET, INSET, 0);
+
+  } else if (S.layoutId === 'narrow') {
+    const span  = layout.narrowSpans[bpIdx];
+    const start = Math.floor((bp.cols - span) / 2);
+    const L     = colLeft(bp, contW, start);
+    const R     = colRight(bp, contW, start, span);
+    makePaneBox(L, R, INSET, INSET, 0);
+
+  } else if (layout.paneRatios) {
+    const ratios  = layout.paneRatios;
+    const stacked = bpIdx <= layout.stackBelow;
+    const wrapped   = !stacked && layout.wrapAt !== undefined && bpIdx <= layout.wrapAt;
+    const wrappedMd = !stacked && !wrapped && layout.wrapMdAt !== undefined && bpIdx <= layout.wrapMdAt;
+
+    const GAP      = 20;
+    const cardH    = layout.cardHeight || null;
+
+    if (stacked) {
+      const n      = ratios.length;
+      const slotH  = cardH || (paneH - INSET*2 - (n-1)*GAP) / n;
+      const L      = colLeft(bp, contW, 0);
+      const R      = colRight(bp, contW, 0, bp.cols);
+      ratios.forEach((_, i) => {
+        const top    = INSET + i*(slotH+GAP);
+        const bottom = paneH - (top + slotH);
+        makePaneBox(L, R, top, bottom, i);
+      });
+
+    } else if (wrapped) {
+      const perRow = 2;
+      const rows   = Math.ceil(ratios.length / perRow);
+      const rowH   = cardH || (paneH - INSET*2 - (rows-1)*GAP) / rows;
+      const halfC  = bp.cols / perRow;
+      ratios.forEach((_, i) => {
+        const col  = i % perRow;
+        const row  = Math.floor(i / perRow);
+        const L    = colLeft(bp, contW, col * halfC);
+        const R    = colRight(bp, contW, col * halfC, halfC);
+        const top  = INSET + row*(rowH+GAP);
+        const bot  = paneH - (top + rowH);
+        makePaneBox(L, R, top, bot, i);
+      });
+
+    } else if (wrappedMd) {
+      // 3-col wrap at md: 3 cards on row 1, remainder on row 2
+      const perRow = 3;
+      const rows   = Math.ceil(ratios.length / perRow);
+      const rowH   = cardH || 200;
+      const colSpan = bp.cols / perRow; // 4 cols each at 12-col grid
+      ratios.forEach((_, i) => {
+        const col  = i % perRow;
+        const row  = Math.floor(i / perRow);
+        const L    = colLeft(bp, contW, col * colSpan);
+        const R    = colRight(bp, contW, col * colSpan, colSpan);
+        const top  = INSET + row*(rowH+GAP);
+        const bot  = paneH - (top + rowH);
+        makePaneBox(L, R, top, bot, i);
+      });
+
+    } else {
+      // Side by side — use paneSpans if defined for this bpIdx, else proportional
+      const total = ratios.reduce((a,b) => a+b, 0);
+      const spans = (layout.paneSpans && layout.paneSpans[bpIdx])
+        ? layout.paneSpans[bpIdx]
+        : ratios.map(r => Math.round(r / total * bp.cols));
+
+      let startCol = 0;
+      spans.forEach((span, i) => {
+        const L      = colLeft(bp, contW, startCol);
+        const R      = colRight(bp, contW, startCol, span);
+        const top    = INSET;
+        const bottom = cardH ? paneH - INSET - cardH : INSET;
+        makePaneBox(L, R, top, bottom, i);
+        startCol += span;
+      });
+    }
+  }
+}
+
+// Dropdowns
+function toggleDD(id) {
+  document.querySelectorAll('.dropdown-menu').forEach(m => {
+    if (m.id !== id+'-menu') m.classList.remove('open');
+  });
+  document.getElementById(id+'-menu').classList.toggle('open');
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.dropdown-wrap')) document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('open'));
+});
+
+const $layoutMenu = document.getElementById('dd-layout-menu');
+LAYOUTS.forEach(l => {
+  const item = document.createElement('div');
+  item.className = 'dropdown-item';
+  item.innerHTML = `${l.label} <span class="check" style="display:${l.id===S.layoutId?'inline':'none'}">✓</span>`;
+  item.onclick = () => {
+    S.layoutId = l.id;
+    document.getElementById('layout-label').textContent = l.label;
+    $layoutMenu.querySelectorAll('.dropdown-item').forEach((el,i) => {
+      el.querySelector('.check').style.display = LAYOUTS[i].id === l.id ? 'inline' : 'none';
+    });
+    toggleDD('dd-layout'); render();
+  };
+  $layoutMenu.appendChild(item);
+});
+
+const $vpMenu = document.getElementById('dd-vp-menu');
+VP_PRESETS.forEach(w => {
+  const item = document.createElement('div');
+  item.className = 'dropdown-item';
+  item.innerHTML = `${w}px <span class="check" style="display:none">✓</span>`;
+  item.onclick = () => {
+    S.vpWidth = w;
+    document.getElementById('vp-label').textContent = w;
+    $vpMenu.querySelectorAll('.dropdown-item').forEach((el,i) => {
+      el.querySelector('.check').style.display = VP_PRESETS[i] === w ? 'inline' : 'none';
+    });
+    toggleDD('dd-vp'); autoNav(); render();
+  };
+  $vpMenu.appendChild(item);
+});
+
+function setColumns(show) {
+  S.showCols = show;
+  document.getElementById('cols-label').textContent = show ? 'Show columns' : 'Hide columns';
+  document.getElementById('chk-show').style.display = show ? 'inline' : 'none';
+  document.getElementById('chk-hide').style.display = show ? 'none' : 'inline';
+  toggleDD('dd-cols'); render();
+}
+
+function setNav(val) {
+  S.nav = val;
+  document.getElementById('nav-label').textContent = NAV_LABELS[val];
+  ['none','primary','expanded','mobile-top'].forEach(k => {
+    document.getElementById('chk-nav-'+k).style.display = k===val ? 'inline' : 'none';
+  });
+  toggleDD('dd-nav'); render();
+}
+
+const NAV_DESKTOP = ['none', 'primary', 'expanded'];
+const NAV_MOBILE  = ['mobile-top'];
+
+function autoNav() {
+  const isSmall = S.vpWidth < 1024;
+  if (isSmall && NAV_DESKTOP.includes(S.nav)) {
+    S.nav = 'mobile-top';
+    updateNavUI();
+  } else if (!isSmall && NAV_MOBILE.includes(S.nav)) {
+    S.nav = 'primary';
+    updateNavUI();
+  }
+}
+
+function updateNavUI() {
+  document.getElementById('nav-label').textContent = NAV_LABELS[S.nav];
+  ['none','primary','expanded','mobile-top'].forEach(k => {
+    document.getElementById('chk-nav-'+k).style.display = k === S.nav ? 'inline' : 'none';
+  });
+}
+let dragging=null, dragX0=0, dragW0=0;
+function dragStart(e, side) {
+  dragging=side; dragX0=e.clientX??e.touches[0].clientX; dragW0=S.vpWidth; e.preventDefault();
+}
+document.getElementById('handle-left').addEventListener('mousedown',  e=>dragStart(e,'left'));
+document.getElementById('handle-right').addEventListener('mousedown', e=>dragStart(e,'right'));
+document.getElementById('handle-left').addEventListener('touchstart',  e=>dragStart(e,'left'),{passive:false});
+document.getElementById('handle-right').addEventListener('touchstart', e=>dragStart(e,'right'),{passive:false});
+document.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  const dx = (e.clientX-dragX0)*(dragging==='left'?-2:2);
+  S.vpWidth = Math.round(Math.max(280, Math.min(dragW0+dx, $stage.offsetWidth-80)));
+  document.getElementById('vp-label').textContent = S.vpWidth;
+  autoNav(); render();
+});
+document.addEventListener('touchmove', e => {
+  if (!dragging) return;
+  const dx = (e.touches[0].clientX-dragX0)*(dragging==='left'?-2:2);
+  S.vpWidth = Math.round(Math.max(280, Math.min(dragW0+dx, $stage.offsetWidth-80)));
+  document.getElementById('vp-label').textContent = S.vpWidth;
+  autoNav(); render();
+},{passive:false});
+document.addEventListener('mouseup',  ()=>dragging=null);
+document.addEventListener('touchend', ()=>dragging=null);
+
+S.vpWidth = Math.min(1200, $stage.offsetWidth-80);
+render();
+window.addEventListener('resize', () => {
+  S.vpWidth = Math.min(S.vpWidth, $stage.offsetWidth-80);
+  render();
+});
+</script>
+</body>
+</html>
