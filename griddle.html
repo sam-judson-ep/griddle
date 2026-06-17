@@ -8,28 +8,14 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f0f0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; user-select: none; }
 
-  #toolbar {
-    height: 52px; background: #F8FBFF; border-bottom: 1px solid #e5e5e5;
-    display: flex; align-items: center; padding: 0 16px; gap: 10px; flex-shrink: 0; z-index: 100;
-  }
+  #toolbar { height: 52px; background: #F8FBFF; border-bottom: 1px solid #e5e5e5; display: flex; align-items: center; padding: 0 16px; gap: 10px; flex-shrink: 0; z-index: 100; }
   #logo { font-weight: 800; font-size: 18px; letter-spacing: -0.5px; margin-right: 8px; }
-  .pill-btn {
-    display: flex; align-items: center; gap: 6px; padding: 6px 12px;
-    border: 1.5px solid #d0d0d0; border-radius: 999px; background: #fff;
-    font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap;
-  }
+  .pill-btn { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1.5px solid #d0d0d0; border-radius: 999px; background: #fff; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; }
   .pill-btn:hover { border-color: #999; }
   .dropdown-wrap { position: relative; }
-  .dropdown-menu {
-    display: none; position: absolute; top: calc(100% + 6px); left: 0;
-    background: #fff; border: 1.5px solid #d0d0d0; border-radius: 12px;
-    padding: 6px; min-width: 200px; z-index: 9999; box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-  }
+  .dropdown-menu { display: none; position: absolute; top: calc(100% + 6px); left: 0; background: #fff; border: 1.5px solid #d0d0d0; border-radius: 12px; padding: 6px; min-width: 200px; z-index: 9999; box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
   .dropdown-menu.open { display: block; }
-  .dropdown-item {
-    padding: 8px 12px; border-radius: 8px; font-size: 13px; cursor: pointer;
-    display: flex; align-items: center; justify-content: space-between;
-  }
+  .dropdown-item { padding: 8px 12px; border-radius: 8px; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; }
   .dropdown-item:hover { background: #f5f5f5; }
   .check { font-size: 12px; }
   .dropdown-divider { height: 1px; background: #eee; margin: 4px 6px; }
@@ -39,11 +25,7 @@
   #vp-outer { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
   #vp-track { position: relative; display: flex; align-items: center; height: 100%; }
 
-  .handle {
-    width: 28px; height: 28px; border-radius: 50%; background: #5b5bd6;
-    cursor: ew-resize; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-    z-index: 50; transition: transform 0.1s;
-  }
+  .handle { width: 28px; height: 28px; border-radius: 50%; background: #5b5bd6; cursor: ew-resize; flex-shrink: 0; display: flex; align-items: center; justify-content: center; z-index: 50; transition: transform 0.1s; }
   .handle:hover { transform: scale(1.15); }
   .handle svg { pointer-events: none; }
   #handle-left  { margin-right: -14px; }
@@ -52,12 +34,51 @@
   #viewport { position: relative; height: 100%; overflow: hidden; background: #ffffff; display: flex; flex-direction: column; }
   #mobile-nav-bar { width: 100%; flex-shrink: 0; background: #ffffff; display: none; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; color: #aaa; letter-spacing: 0.5px; border-bottom: 1px solid #eee; }
   #content-area { flex: 1; display: flex; overflow: hidden; position: relative; background: #ffffff; }
-  #grid-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 0; display: flex; }
   #nav-panel { background: #ffffff; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #aaa; font-weight: 500; letter-spacing: 0.5px; border-right: 1px solid #eee; position: relative; z-index: 2; }
   #nav-panel .nav-label { writing-mode: vertical-rl; transform: rotate(180deg); }
+
+  /* Layout panes — fills remaining space after nav */
   #layout-panes { flex: 1; position: relative; overflow: hidden; z-index: 2; }
-  .pane-box { position: absolute; background: #fff; border-radius: 6px; z-index: 1; }
+
+  /* The CSS grid container — sits inside layout-panes */
+  .grid-stage {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 60px 0;
+    z-index: 2;
+  }
+
+  /* The actual CSS grid */
+  .ep-grid {
+    width: 100%;
+    max-width: 1408px;
+    margin: 0 auto;
+    display: grid;
+    gap: 20px;
+    height: 100%;
+  }
+
+  /* Column overlay — sits behind everything */
+  #grid-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+  .col-overlay-inner {
+    position: absolute;
+    inset: 0;
+    max-width: 1408px;
+    width: 100%;
+    margin: 0 auto;
+    display: grid;
+    gap: 20px;
+  }
+  .col-overlay-col { }
+
+  /* Pane boxes */
+  .pane-box { background: #fff; border-radius: 6px; position: relative; height: 100%; }
+  .pane-box.card { height: 200px; align-self: start; }
   .pane-num { position: absolute; top: 12px; left: 12px; width: 26px; height: 26px; border-radius: 50%; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+
   #bp-badge { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 999px; pointer-events: none; z-index: 20; white-space: nowrap; }
   #width-label { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.6); color: #fff; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px; pointer-events: none; z-index: 100; white-space: nowrap; }
 </style>
@@ -140,234 +161,337 @@
 </div>
 
 <script>
-const MAX_BODY     = 1344;
-const INSET        = 60;
-const MOBILE_TOP_H = 64;
+// ── CONSTANTS ──────────────────────────────────────────────────────────────
+var MAX_WIDTH    = 1408;
+var GAP          = 20;
+var MOBILE_TOP_H = 64;
+var INSET        = 60; // top/bottom padding for grid-stage
 
-const NAV_WIDTHS = { none: 0, primary: 80, expanded: 240, 'mobile-top': 0 };
-const NAV_LABELS = { none: 'No nav', primary: 'Primary nav', expanded: 'Expanded nav', 'mobile-top': 'Mobile top bar' };
+var NAV_WIDTHS = { none: 0, primary: 80, expanded: 240, 'mobile-top': 0 };
+var NAV_LABELS = { none: 'No nav', primary: 'Primary nav', expanded: 'Expanded nav', 'mobile-top': 'Mobile top bar' };
+var NAV_DESKTOP = ['none', 'primary', 'expanded'];
+var NAV_MOBILE  = ['mobile-top'];
 
-const PC = [
+// Pane colours — fixed per index
+var PC = [
   { b: '#5b5bd6', t: '#fff' },
   { b: '#d6395b', t: '#fff' },
   { b: '#d67a1a', t: '#fff' },
-  { b: '#1a9e5c', t: '#fff' },
+  { b: '#1a9e5c', t: '#fff' }
 ];
 
-const BPS = [
-  { maxW: 575,      cols: 4,  margin: 20, gutter: 20, colColor: 'rgba(252,209,220,0.7)',  badgeBg: '#f9a8c0', badgeText: '#7a1a36', label: 'xs  0–575px' },
-  { maxW: 767,      cols: 8,  margin: 24, gutter: 20, colColor: 'rgba(252,209,200,0.7)',  badgeBg: '#f9b8a0', badgeText: '#7a2a10', label: 'sm  576–767px' },
-  { maxW: 1151,     cols: 12, margin: 32, gutter: 20, colColor: 'rgba(220,220,255,0.65)', badgeBg: '#c4c4f5', badgeText: '#2a2a7a', label: 'md  768–1151px' },
-  { maxW: 1407,     cols: 12, margin: 64, gutter: 20, colColor: 'rgba(190,220,255,0.65)', badgeBg: '#90c4f5', badgeText: '#0a3a6a', label: 'lg  1152–1407px' },
-  { maxW: Infinity, cols: 12, margin: 96, gutter: 20, colColor: 'rgba(190,240,210,0.65)', badgeBg: '#90d8aa', badgeText: '#0a4a22', label: 'xl  1408px+' },
+// Container query breakpoints (based on panesW — width of layout-panes)
+// Default: < 576px  → 4 cols, px 20px
+// @xl:     >= 576px → 8 cols, px 20px
+// @3xl:    >= 768px → 12 cols, px 40px
+// @6xl:    >= 1152px → 12 cols, px 96px
+var BPS = [
+  { minW: 1152, cols: 12, pad: 96,  colColor: 'rgba(190,240,210,0.65)', badgeBg: '#90d8aa', badgeText: '#0a4a22', label: '@6xl  1152px+' },
+  { minW: 768,  cols: 12, pad: 40,  colColor: 'rgba(190,220,255,0.65)', badgeBg: '#90c4f5', badgeText: '#0a3a6a', label: '@3xl  768–1151px' },
+  { minW: 576,  cols: 8,  pad: 20,  colColor: 'rgba(220,220,255,0.65)', badgeBg: '#c4c4f5', badgeText: '#2a2a7a', label: '@xl   576–767px' },
+  { minW: 0,    cols: 4,  pad: 20,  colColor: 'rgba(252,209,220,0.7)',  badgeBg: '#f9a8c0', badgeText: '#7a1a36', label: 'Default  0–575px' },
 ];
 
-const LAYOUTS = [
-  { id: 'full',     label: 'Full-width' },
-  { id: 'narrow',   label: 'Narrow', narrowSpans: [4,6,8,8,6] },
-  { id: '1q3q',     label: 'One-quarter / Three-quarters', paneRatios:[1,3], stackBelow:1, paneSpans:{ 2:[4,8], 3:[3,9], 4:[3,9] } },
-  { id: '1t2t',     label: 'One-third / Two-thirds',       paneRatios:[1,2], stackBelow:1 },
-  { id: 'half',     label: 'Half / Half',                  paneRatios:[1,1], stackBelow:1 },
-  { id: '2t1t',     label: 'Two-thirds / One-third',       paneRatios:[2,1], stackBelow:1 },
-  { id: '3q1q',     label: 'Three-quarters / One-quarter', paneRatios:[3,1], stackBelow:1, paneSpans:{ 2:[8,4], 3:[9,3], 4:[9,3] } },
-  { id: 'thirds',   label: 'One-third / One-third / One-third', paneRatios:[1,1,1], stackBelow:1, cardHeight:200 },
-  { id: 'quarters', label: 'Quarters', paneRatios:[1,1,1,1], stackBelow:0, wrapAt:1, wrapMdAt:2, cardHeight:200 },
+function getBP(w) {
+  for (var i = 0; i < BPS.length; i++) {
+    if (w >= BPS[i].minW) return BPS[i];
+  }
+  return BPS[BPS.length - 1];
+}
+
+// Layout definitions
+// gridCols: CSS grid-template-columns per bp [default, @xl, @3xl, @6xl]
+// paneSpans: column spans per pane per bp
+// card: fixed 200px height cards
+// narrowOffset: [colStart, colSpan] per bp for Medium/Narrow
+var LAYOUTS = [
+  {
+    id: 'full', label: 'Full-width',
+    panes: 1,
+    // spans all cols at every bp
+    getSpans: function(bp) { return [[1, bp.cols]]; }
+  },
+  {
+    id: 'narrow', label: 'Narrow',
+    panes: 1,
+    // Default/@xl: full width; @3xl: cols 2–11 (10 of 12); @6xl: cols 3–10 (8 of 12)
+    getSpans: function(bp) {
+      if (bp.minW >= 1152) return [[3, 8]];   // @6xl: start 3, span 8
+      if (bp.minW >= 768)  return [[2, 10]];  // @3xl: start 2, span 10
+      return [[1, bp.cols]];                   // default/@xl: full
+    }
+  },
+  {
+    id: 'half', label: 'Half / Half',
+    panes: 2,
+    getSpans: function(bp) {
+      if (bp.minW >= 768) return [[1,6],[7,6]]; // @3xl+: 6+6
+      return null; // stacked
+    }
+  },
+  {
+    id: '1q3q', label: 'One-quarter / Three-quarters',
+    panes: 2,
+    getSpans: function(bp) {
+      if (bp.minW >= 768) return [[1,3],[4,9]]; // @3xl+: 3+9
+      return null; // stacked
+    }
+  },
+  {
+    id: '3q1q', label: 'Three-quarters / One-quarter',
+    panes: 2,
+    getSpans: function(bp) {
+      if (bp.minW >= 768) return [[1,9],[10,3]]; // @3xl+: 9+3
+      return null; // stacked
+    }
+  },
+  {
+    id: '1t2t', label: 'One-third / Two-thirds',
+    panes: 2,
+    getSpans: function(bp) {
+      if (bp.minW >= 768) return [[1,4],[5,8]]; // @3xl+: 4+8
+      return null;
+    }
+  },
+  {
+    id: '2t1t', label: 'Two-thirds / One-third',
+    panes: 2,
+    getSpans: function(bp) {
+      if (bp.minW >= 768) return [[1,8],[9,4]]; // @3xl+: 8+4
+      return null;
+    }
+  },
+  {
+    id: 'thirds', label: 'One-third / One-third / One-third',
+    panes: 3, card: true,
+    getSpans: function(bp) {
+      if (bp.minW >= 768)  return [[1,4],[5,4],[9,4]];   // @3xl+: 3 cols
+      if (bp.minW >= 576)  return [[1,4],[5,4],[1,4]];   // @xl: 2 cols wrap (special)
+      return null; // stacked
+    }
+  },
+  {
+    id: 'quarters', label: 'Quarters',
+    panes: 4, card: true,
+    getSpans: function(bp) {
+      if (bp.minW >= 1152) return [[1,3],[4,3],[7,3],[10,3]];  // @6xl: 4 cols
+      if (bp.minW >= 768)  return [[1,4],[5,4],[9,4],[1,4]];  // @3xl: 3 cols wrap
+      if (bp.minW >= 576)  return [[1,4],[5,4],[1,4],[5,4]];  // @xl: 2 cols wrap
+      return null; // stacked
+    }
+  },
 ];
 
-const VP_PRESETS = [320, 375, 390, 430, 576, 768, 1024, 1152, 1280, 1408, 1536];
+var VP_PRESETS = [320, 375, 390, 430, 576, 768, 1024, 1152, 1280, 1408, 1536];
+var S = { vpWidth: 1200, layoutId: 'full', showCols: true, nav: 'primary' };
 
-const S = { vpWidth: 1200, layoutId: 'full', showCols: true, nav: 'primary' };
-
-const $vp      = document.getElementById('viewport');
-const $grid    = document.getElementById('grid-overlay');
-const $navP    = document.getElementById('nav-panel');
-const $mobileN = document.getElementById('mobile-nav-bar');
-const $panes   = document.getElementById('layout-panes');
-const $wLabel  = document.getElementById('width-label');
-const $badge   = document.getElementById('bp-badge');
-const $stage   = document.getElementById('stage');
-
-function getBP(w) { return BPS.find(b => w <= b.maxW); }
-function getBPIdx(b) { return BPS.indexOf(b); }
-
-// bp.margin is a minimum. Above MAX_BODY the surplus is shared equally,
-// growing the margin so content stays centred and never exceeds MAX_BODY wide.
-// Grid width grows with the container, respecting minimum margins, capped at MAX_BODY.
-function gridWidth(bp, w) {
-  return Math.min(w - 2*bp.margin, MAX_BODY);
-}
-// Left offset = centres the grid within w.
-function effectiveMargin(bp, w) {
-  return (w - gridWidth(bp, w)) / 2;
-}
-function colWidth(bp, w) {
-  return (gridWidth(bp, w) - (bp.cols-1)*bp.gutter) / bp.cols;
-}
-function colLeft(bp, w, c) {
-  return effectiveMargin(bp, w) + c*(colWidth(bp, w) + bp.gutter);
-}
-function colRight(bp, w, c, span) {
-  const cw = colWidth(bp, w);
-  return effectiveMargin(bp, w) + c*(cw + bp.gutter) + span*cw + (span-1)*bp.gutter;
-}
-
-function makePaneBox(left, right, top, bottom, idx) {
-  const c   = PC[idx % PC.length];
-  const pw  = $panes.offsetWidth;
-  const box = document.createElement('div');
-  box.className = 'pane-box';
-  box.style.cssText = `left:${left}px; right:${pw - right}px; top:${top}px; bottom:${bottom}px; border:1.5px solid ${c.b};`;
-  const num = document.createElement('div');
-  num.className = 'pane-num';
-  num.textContent = String(idx+1);
-  num.style.cssText = `background:${c.b}; color:${c.t};`;
-  box.appendChild(num);
-  $panes.appendChild(box);
-}
+var $vp      = document.getElementById('viewport');
+var $grid    = document.getElementById('grid-overlay');
+var $navP    = document.getElementById('nav-panel');
+var $mobileN = document.getElementById('mobile-nav-bar');
+var $panes   = document.getElementById('layout-panes');
+var $wLabel  = document.getElementById('width-label');
+var $badge   = document.getElementById('bp-badge');
+var $stage   = document.getElementById('stage');
 
 function render() {
-  const navW     = NAV_WIDTHS[S.nav];
-  const isMobTop = S.nav === 'mobile-top';
-  const vpW      = S.vpWidth;
+  var navW     = NAV_WIDTHS[S.nav];
+  var isMobTop = S.nav === 'mobile-top';
+  var vpW      = S.vpWidth;
+  var panesW   = Math.max(vpW - navW, 0);
+  var bp       = getBP(panesW);
 
-  // Apply VP width and nav visibility first, so the browser lays out
-  // #layout-panes before we measure it.
+  // Viewport
   $vp.style.width        = vpW + 'px';
   $mobileN.style.display = isMobTop ? 'flex' : 'none';
   $mobileN.style.height  = MOBILE_TOP_H + 'px';
   $navP.style.width      = navW + 'px';
+  $navP.style.background = '#ffffff';
   $navP.style.display    = (!isMobTop && navW > 0) ? 'flex' : 'none';
   $wLabel.textContent    = vpW + 'px';
-
-  // Read the actual rendered width of #layout-panes — this is the single
-  // source of truth for all column geometry. It already accounts for the
-  // nav panel, borders, and any sub-pixel rounding the browser applies.
-  const w = $panes.offsetWidth;
-
-  const bp    = getBP(w);
-  const bpIdx = getBPIdx(bp);
-
-  $badge.textContent      = bp.label;
+  $badge.textContent     = bp.label;
   $badge.style.background = bp.badgeBg;
   $badge.style.color      = bp.badgeText;
 
-  // Grid overlay: spans full #layout-panes, columns inset via padding
-  Array.from($grid.children).forEach(el => el.remove());
-  $grid.style.display = S.showCols ? 'flex' : 'none';
+  // ── Column overlay ──────────────────────────────────────────────────────
+  $grid.innerHTML = '';
+  $grid.style.display = S.showCols ? 'block' : 'none';
+
   if (S.showCols) {
-    const m = effectiveMargin(bp, w);
-    $grid.style.cssText = `display:flex; position:absolute; inset:0; pointer-events:none; z-index:1; padding-left:${m}px; padding-right:${m}px;`;
-    for (let i = 0; i < bp.cols; i++) {
-      const col = document.createElement('div');
-      col.style.cssText = `flex:1; background:${bp.colColor};${i < bp.cols-1 ? ` margin-right:${bp.gutter}px` : ''}`;
-      $grid.appendChild(col);
+    var inner = document.createElement('div');
+    inner.className = 'col-overlay-inner';
+    inner.style.gridTemplateColumns = 'repeat(' + bp.cols + ', 1fr)';
+    inner.style.padding = '0 ' + bp.pad + 'px';
+    for (var i = 0; i < bp.cols; i++) {
+      var col = document.createElement('div');
+      col.style.background = bp.colColor;
+      inner.appendChild(col);
     }
+    $grid.appendChild(inner);
   }
 
-  // Clear pane boxes, keep badge
-  Array.from($panes.children).forEach(el => { if (el.id !== 'bp-badge' && el.id !== 'grid-overlay') el.remove(); });
+  // ── Layout panes ────────────────────────────────────────────────────────
+  // Remove old grid stage
+  var old = $panes.querySelector('.grid-stage');
+  if (old) old.remove();
 
-  const layout = LAYOUTS.find(l => l.id === S.layoutId);
-  const paneH  = $panes.offsetHeight || 600;
-  const GAP    = 20;
-  const cardH  = layout.cardHeight || null;
+  var layout = null;
+  for (var i = 0; i < LAYOUTS.length; i++) {
+    if (LAYOUTS[i].id === S.layoutId) { layout = LAYOUTS[i]; break; }
+  }
+  if (!layout) return;
 
-  if (S.layoutId === 'full') {
-    makePaneBox(colLeft(bp,w,0), colRight(bp,w,0,bp.cols), INSET, INSET, 0);
+  var spans   = layout.getSpans(bp);
+  var isCard  = !!layout.card;
+  var n       = layout.panes;
+  var stacked = !spans;
+
+  // Build grid stage wrapper
+  var stage = document.createElement('div');
+  stage.className = 'grid-stage';
+
+  if (stacked) {
+    // Stack vertically — one full-width pane per row, each card or auto height
+    var stackGrid = document.createElement('div');
+    stackGrid.className = 'ep-grid';
+    stackGrid.style.gridTemplateColumns = '1fr';
+    stackGrid.style.padding = '0 ' + bp.pad + 'px';
+    stackGrid.style.height = 'auto';
+    stackGrid.style.alignContent = 'start';
+    stackGrid.style.gap = GAP + 'px';
+
+    for (var i = 0; i < n; i++) {
+      var box = makePaneBox(i, isCard);
+      stackGrid.appendChild(box);
+    }
+    stage.appendChild(stackGrid);
+
+  } else if (S.layoutId === 'thirds' && bp.minW >= 576 && bp.minW < 768) {
+    // Thirds @xl: 2+1 wrap
+    var g = document.createElement('div');
+    g.className = 'ep-grid';
+    g.style.gridTemplateColumns = 'repeat(2, 1fr)';
+    g.style.padding = '0 ' + bp.pad + 'px';
+    g.style.height = 'auto';
+    g.style.alignContent = 'start';
+    for (var i = 0; i < n; i++) {
+      var box = makePaneBox(i, true);
+      stackGrid.appendChild(box);
+    }
+    stage.appendChild(g);
+
+  } else if (S.layoutId === 'quarters' && bp.minW >= 576 && bp.minW < 768) {
+    // Quarters @xl: 2-col wrap
+    var g = document.createElement('div');
+    g.className = 'ep-grid';
+    g.style.gridTemplateColumns = 'repeat(2, 1fr)';
+    g.style.padding = '0 ' + bp.pad + 'px';
+    g.style.height = 'auto';
+    g.style.alignContent = 'start';
+    for (var i = 0; i < n; i++) g.appendChild(makePaneBox(i, true));
+    stage.appendChild(g);
+
+  } else if (S.layoutId === 'quarters' && bp.minW >= 768 && bp.minW < 1152) {
+    // Quarters @3xl: 3-col wrap
+    var g = document.createElement('div');
+    g.className = 'ep-grid';
+    g.style.gridTemplateColumns = 'repeat(3, 1fr)';
+    g.style.padding = '0 ' + bp.pad + 'px';
+    g.style.height = 'auto';
+    g.style.alignContent = 'start';
+    for (var i = 0; i < n; i++) g.appendChild(makePaneBox(i, true));
+    stage.appendChild(g);
 
   } else if (S.layoutId === 'narrow') {
-    const span  = layout.narrowSpans[bpIdx];
-    const start = Math.floor((bp.cols - span) / 2);
-    makePaneBox(colLeft(bp,w,start), colRight(bp,w,start,span), INSET, INSET, 0);
+    // Narrow: centred single pane using CSS grid placement
+    var colSpan = spans[0][1];
+    var colStart = spans[0][0];
+    var g = document.createElement('div');
+    g.className = 'ep-grid';
+    g.style.gridTemplateColumns = 'repeat(' + bp.cols + ', 1fr)';
+    g.style.padding = '0 ' + bp.pad + 'px';
+    var box = makePaneBox(0, false);
+    box.style.gridColumn = colStart + ' / span ' + colSpan;
+    g.appendChild(box);
+    stage.appendChild(g);
 
-  } else if (layout.paneRatios) {
-    const ratios    = layout.paneRatios;
-    const stacked   = bpIdx <= layout.stackBelow;
-    const wrapped   = !stacked && layout.wrapAt   !== undefined && bpIdx <= layout.wrapAt;
-    const wrappedMd = !stacked && !wrapped && layout.wrapMdAt !== undefined && bpIdx <= layout.wrapMdAt;
+  } else {
+    // Standard side-by-side using explicit col placement
+    var g = document.createElement('div');
+    g.className = 'ep-grid';
+    g.style.gridTemplateColumns = 'repeat(' + bp.cols + ', 1fr)';
+    g.style.padding = '0 ' + bp.pad + 'px';
+    if (isCard) { g.style.height = 'auto'; g.style.alignContent = 'start'; }
 
-    if (stacked) {
-      const n     = ratios.length;
-      const slotH = cardH || (paneH - INSET*2 - (n-1)*GAP) / n;
-      const L = colLeft(bp,w,0), R = colRight(bp,w,0,bp.cols);
-      ratios.forEach((_, i) => {
-        const top = INSET + i*(slotH+GAP);
-        makePaneBox(L, R, top, paneH-(top+slotH), i);
-      });
-
-    } else if (wrapped) {
-      const perRow = 2, halfC = bp.cols / perRow;
-      const rows   = Math.ceil(ratios.length / perRow);
-      const rowH   = cardH || (paneH - INSET*2 - (rows-1)*GAP) / rows;
-      ratios.forEach((_, i) => {
-        const col = i % perRow, row = Math.floor(i / perRow);
-        const top = INSET + row*(rowH+GAP);
-        makePaneBox(colLeft(bp,w,col*halfC), colRight(bp,w,col*halfC,halfC), top, paneH-(top+rowH), i);
-      });
-
-    } else if (wrappedMd) {
-      const perRow = 3, colSpan = bp.cols / perRow;
-      const rows   = Math.ceil(ratios.length / perRow);
-      const rowH   = cardH || 200;
-      ratios.forEach((_, i) => {
-        const col = i % perRow, row = Math.floor(i / perRow);
-        const top = INSET + row*(rowH+GAP);
-        makePaneBox(colLeft(bp,w,col*colSpan), colRight(bp,w,col*colSpan,colSpan), top, paneH-(top+rowH), i);
-      });
-
-    } else {
-      const total = ratios.reduce((a,b) => a+b, 0);
-      const spans = (layout.paneSpans && layout.paneSpans[bpIdx])
-        ? layout.paneSpans[bpIdx]
-        : ratios.map(r => Math.round(r / total * bp.cols));
-      let sc = 0;
-      spans.forEach((span, i) => {
-        const bottom = cardH ? paneH - INSET - cardH : INSET;
-        makePaneBox(colLeft(bp,w,sc), colRight(bp,w,sc,span), INSET, bottom, i);
-        sc += span;
-      });
+    for (var i = 0; i < spans.length; i++) {
+      var box = makePaneBox(i, isCard);
+      box.style.gridColumn = spans[i][0] + ' / span ' + spans[i][1];
+      g.appendChild(box);
     }
+    stage.appendChild(g);
   }
+
+  $panes.appendChild(stage);
 }
 
-// Dropdowns
-function toggleDD(id) {
-  document.querySelectorAll('.dropdown-menu').forEach(m => {
-    if (m.id !== id+'-menu') m.classList.remove('open');
-  });
-  document.getElementById(id+'-menu').classList.toggle('open');
+function makePaneBox(idx, isCard) {
+  var c   = PC[idx % PC.length];
+  var box = document.createElement('div');
+  box.className = 'pane-box' + (isCard ? ' card' : '');
+  box.style.border = '1.5px solid ' + c.b;
+  var num = document.createElement('div');
+  num.className = 'pane-num';
+  num.textContent = String(idx + 1);
+  num.style.background = c.b;
+  num.style.color = c.t;
+  box.appendChild(num);
+  return box;
 }
-document.addEventListener('click', e => {
-  if (!e.target.closest('.dropdown-wrap')) document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('open'));
+
+// ── DROPDOWNS ──────────────────────────────────────────────────────────────
+function toggleDD(id) {
+  var menus = document.querySelectorAll('.dropdown-menu');
+  for (var i = 0; i < menus.length; i++) {
+    if (menus[i].id !== id + '-menu') menus[i].classList.remove('open');
+  }
+  document.getElementById(id + '-menu').classList.toggle('open');
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.dropdown-wrap')) {
+    var menus = document.querySelectorAll('.dropdown-menu');
+    for (var i = 0; i < menus.length; i++) menus[i].classList.remove('open');
+  }
 });
 
-const $layoutMenu = document.getElementById('dd-layout-menu');
-LAYOUTS.forEach(l => {
-  const item = document.createElement('div');
+var $layoutMenu = document.getElementById('dd-layout-menu');
+LAYOUTS.forEach(function(l) {
+  var item = document.createElement('div');
   item.className = 'dropdown-item';
-  item.innerHTML = `${l.label} <span class="check" style="display:${l.id===S.layoutId?'inline':'none'}">✓</span>`;
-  item.onclick = () => {
+  item.innerHTML = l.label + ' <span class="check" style="display:' + (l.id === S.layoutId ? 'inline' : 'none') + '">✓</span>';
+  item.onclick = function() {
     S.layoutId = l.id;
     document.getElementById('layout-label').textContent = l.label;
-    $layoutMenu.querySelectorAll('.dropdown-item').forEach((el,i) => {
-      el.querySelector('.check').style.display = LAYOUTS[i].id === l.id ? 'inline' : 'none';
-    });
+    var items = $layoutMenu.querySelectorAll('.dropdown-item');
+    for (var i = 0; i < items.length; i++) {
+      items[i].querySelector('.check').style.display = LAYOUTS[i].id === l.id ? 'inline' : 'none';
+    }
     toggleDD('dd-layout'); render();
   };
   $layoutMenu.appendChild(item);
 });
 
-const $vpMenu = document.getElementById('dd-vp-menu');
-VP_PRESETS.forEach(w => {
-  const item = document.createElement('div');
+var $vpMenu = document.getElementById('dd-vp-menu');
+VP_PRESETS.forEach(function(w) {
+  var item = document.createElement('div');
   item.className = 'dropdown-item';
-  item.innerHTML = `${w}px <span class="check" style="display:none">✓</span>`;
-  item.onclick = () => {
+  item.innerHTML = w + 'px <span class="check" style="display:none">✓</span>';
+  item.onclick = function() {
     S.vpWidth = w;
     document.getElementById('vp-label').textContent = w;
-    $vpMenu.querySelectorAll('.dropdown-item').forEach((el,i) => {
-      el.querySelector('.check').style.display = VP_PRESETS[i] === w ? 'inline' : 'none';
-    });
+    var items = $vpMenu.querySelectorAll('.dropdown-item');
+    for (var i = 0; i < items.length; i++) {
+      items[i].querySelector('.check').style.display = VP_PRESETS[i] === w ? 'inline' : 'none';
+    }
     toggleDD('dd-vp'); autoNav(); render();
   };
   $vpMenu.appendChild(item);
@@ -377,66 +501,68 @@ function setColumns(show) {
   S.showCols = show;
   document.getElementById('cols-label').textContent = show ? 'Show columns' : 'Hide columns';
   document.getElementById('chk-show').style.display = show ? 'inline' : 'none';
-  document.getElementById('chk-hide').style.display = show ? 'none'   : 'inline';
+  document.getElementById('chk-hide').style.display = show ? 'none' : 'inline';
   toggleDD('dd-cols'); render();
 }
 
 function setNav(val) {
   S.nav = val;
   document.getElementById('nav-label').textContent = NAV_LABELS[val];
-  ['none','primary','expanded','mobile-top'].forEach(k => {
-    document.getElementById('chk-nav-'+k).style.display = k===val ? 'inline' : 'none';
+  ['none','primary','expanded','mobile-top'].forEach(function(k) {
+    document.getElementById('chk-nav-' + k).style.display = k === val ? 'inline' : 'none';
   });
   toggleDD('dd-nav'); render();
 }
 
-const NAV_DESKTOP = ['none','primary','expanded'];
-const NAV_MOBILE  = ['mobile-top'];
-
-function autoNav() {
-  const isSmall = S.vpWidth < 1024;
-  if (isSmall && NAV_DESKTOP.includes(S.nav))      { S.nav = 'mobile-top'; updateNavUI(); }
-  else if (!isSmall && NAV_MOBILE.includes(S.nav)) { S.nav = 'primary';    updateNavUI(); }
-}
 function updateNavUI() {
   document.getElementById('nav-label').textContent = NAV_LABELS[S.nav];
-  ['none','primary','expanded','mobile-top'].forEach(k => {
-    document.getElementById('chk-nav-'+k).style.display = k===S.nav ? 'inline' : 'none';
+  ['none','primary','expanded','mobile-top'].forEach(function(k) {
+    document.getElementById('chk-nav-' + k).style.display = k === S.nav ? 'inline' : 'none';
   });
 }
 
-let dragging=null, dragX0=0, dragW0=0;
-function dragStart(e, side) {
-  dragging=side; dragX0=e.clientX??e.touches[0].clientX; dragW0=S.vpWidth; e.preventDefault();
+function autoNav() {
+  var isSmall = S.vpWidth < 1024;
+  if (isSmall && NAV_DESKTOP.indexOf(S.nav) !== -1) { S.nav = 'mobile-top'; updateNavUI(); }
+  else if (!isSmall && NAV_MOBILE.indexOf(S.nav) !== -1) { S.nav = 'primary'; updateNavUI(); }
 }
-document.getElementById('handle-left').addEventListener('mousedown',   e=>dragStart(e,'left'));
-document.getElementById('handle-right').addEventListener('mousedown',  e=>dragStart(e,'right'));
-document.getElementById('handle-left').addEventListener('touchstart',  e=>dragStart(e,'left'),{passive:false});
-document.getElementById('handle-right').addEventListener('touchstart', e=>dragStart(e,'right'),{passive:false});
-document.addEventListener('mousemove', e => {
+
+// ── DRAG ───────────────────────────────────────────────────────────────────
+var dragging = null, dragX0 = 0, dragW0 = 0;
+function dragStart(e, side) {
+  dragging = side;
+  dragX0 = e.clientX !== undefined ? e.clientX : e.touches[0].clientX;
+  dragW0 = S.vpWidth;
+  e.preventDefault();
+}
+document.getElementById('handle-left').addEventListener('mousedown',  function(e){ dragStart(e,'left'); });
+document.getElementById('handle-right').addEventListener('mousedown', function(e){ dragStart(e,'right'); });
+document.getElementById('handle-left').addEventListener('touchstart',  function(e){ dragStart(e,'left'); }, {passive:false});
+document.getElementById('handle-right').addEventListener('touchstart', function(e){ dragStart(e,'right'); }, {passive:false});
+document.addEventListener('mousemove', function(e) {
   if (!dragging) return;
-  const dx = (e.clientX-dragX0)*(dragging==='left'?-2:2);
-  S.vpWidth = Math.round(Math.max(280, Math.min(dragW0+dx, $stage.offsetWidth-80)));
+  var dx = (e.clientX - dragX0) * (dragging === 'left' ? -2 : 2);
+  S.vpWidth = Math.round(Math.max(280, Math.min(dragW0 + dx, $stage.offsetWidth - 80)));
   document.getElementById('vp-label').textContent = S.vpWidth;
   autoNav(); render();
 });
-document.addEventListener('touchmove', e => {
+document.addEventListener('touchmove', function(e) {
   if (!dragging) return;
-  const dx = (e.touches[0].clientX-dragX0)*(dragging==='left'?-2:2);
-  S.vpWidth = Math.round(Math.max(280, Math.min(dragW0+dx, $stage.offsetWidth-80)));
+  var dx = (e.touches[0].clientX - dragX0) * (dragging === 'left' ? -2 : 2);
+  S.vpWidth = Math.round(Math.max(280, Math.min(dragW0 + dx, $stage.offsetWidth - 80)));
   document.getElementById('vp-label').textContent = S.vpWidth;
   autoNav(); render();
-},{passive:false});
-document.addEventListener('mouseup',  ()=>dragging=null);
-document.addEventListener('touchend', ()=>dragging=null);
+}, {passive:false});
+document.addEventListener('mouseup',  function(){ dragging = null; });
+document.addEventListener('touchend', function(){ dragging = null; });
 
-S.vpWidth = Math.min(1200, $stage.offsetWidth-80);
+// ── INIT ───────────────────────────────────────────────────────────────────
+S.vpWidth = Math.min(1200, $stage.offsetWidth - 80);
 render();
-window.addEventListener('resize', () => {
-  S.vpWidth = Math.min(S.vpWidth, $stage.offsetWidth-80);
+window.addEventListener('resize', function() {
+  S.vpWidth = Math.min(S.vpWidth, $stage.offsetWidth - 80);
   render();
 });
 </script>
 </body>
 </html>
-
