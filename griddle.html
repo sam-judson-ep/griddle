@@ -75,8 +75,9 @@
   .col-overlay-col { }
 
   /* Pane boxes */
-  .pane-box { background: #fff; border-radius: 6px; position: relative; height: 100%; }
-  .pane-box.card { height: 200px; align-self: start; }
+  .pane-box { background: #fff; border-radius: 6px; position: relative; min-height: 120px; }
+  .pane-box.card { height: 200px; }
+  .pane-box.full-height { height: 100%; }
   .pane-num { position: absolute; top: 12px; left: 12px; width: 26px; height: 26px; border-radius: 50%; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
 
   #bp-badge { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 999px; pointer-events: none; z-index: 20; white-space: nowrap; }
@@ -351,20 +352,16 @@ function render() {
   stage.className = 'grid-stage';
 
   if (stacked) {
-    // Stack vertically — one full-width pane per row, each card or auto height
-    var stackGrid = document.createElement('div');
-    stackGrid.className = 'ep-grid';
-    stackGrid.style.gridTemplateColumns = '1fr';
-    stackGrid.style.padding = '0 ' + bp.pad + 'px';
-    stackGrid.style.height = 'auto';
-    stackGrid.style.alignContent = 'start';
-    stackGrid.style.gap = GAP + 'px';
-
-    for (var i = 0; i < n; i++) {
-      var box = makePaneBox(i, isCard);
-      stackGrid.appendChild(box);
-    }
-    stage.appendChild(stackGrid);
+    // Stack vertically — one full-width pane per row
+    var g = document.createElement('div');
+    g.className = 'ep-grid';
+    g.style.gridTemplateColumns = '1fr';
+    g.style.padding = '0 ' + bp.pad + 'px';
+    g.style.height = 'auto';
+    g.style.alignContent = 'start';
+    g.style.gap = GAP + 'px';
+    for (var i = 0; i < n; i++) g.appendChild(makePaneBox(i, isCard, false));
+    stage.appendChild(g);
 
   } else if (S.layoutId === 'thirds' && bp.minW >= 576 && bp.minW < 768) {
     // Thirds @xl: 2+1 wrap
@@ -374,10 +371,7 @@ function render() {
     g.style.padding = '0 ' + bp.pad + 'px';
     g.style.height = 'auto';
     g.style.alignContent = 'start';
-    for (var i = 0; i < n; i++) {
-      var box = makePaneBox(i, true);
-      stackGrid.appendChild(box);
-    }
+    for (var i = 0; i < n; i++) g.appendChild(makePaneBox(i, true, false));
     stage.appendChild(g);
 
   } else if (S.layoutId === 'quarters' && bp.minW >= 576 && bp.minW < 768) {
@@ -388,7 +382,7 @@ function render() {
     g.style.padding = '0 ' + bp.pad + 'px';
     g.style.height = 'auto';
     g.style.alignContent = 'start';
-    for (var i = 0; i < n; i++) g.appendChild(makePaneBox(i, true));
+    for (var i = 0; i < n; i++) g.appendChild(makePaneBox(i, true, false));
     stage.appendChild(g);
 
   } else if (S.layoutId === 'quarters' && bp.minW >= 768 && bp.minW < 1152) {
@@ -399,7 +393,7 @@ function render() {
     g.style.padding = '0 ' + bp.pad + 'px';
     g.style.height = 'auto';
     g.style.alignContent = 'start';
-    for (var i = 0; i < n; i++) g.appendChild(makePaneBox(i, true));
+    for (var i = 0; i < n; i++) g.appendChild(makePaneBox(i, true, false));
     stage.appendChild(g);
 
   } else if (S.layoutId === 'narrow') {
@@ -410,7 +404,7 @@ function render() {
     g.className = 'ep-grid';
     g.style.gridTemplateColumns = 'repeat(' + bp.cols + ', 1fr)';
     g.style.padding = '0 ' + bp.pad + 'px';
-    var box = makePaneBox(0, false);
+    var box = makePaneBox(0, false, true);
     box.style.gridColumn = colStart + ' / span ' + colSpan;
     g.appendChild(box);
     stage.appendChild(g);
@@ -424,7 +418,7 @@ function render() {
     if (isCard) { g.style.height = 'auto'; g.style.alignContent = 'start'; }
 
     for (var i = 0; i < spans.length; i++) {
-      var box = makePaneBox(i, isCard);
+      var box = makePaneBox(i, isCard, !isCard);
       box.style.gridColumn = spans[i][0] + ' / span ' + spans[i][1];
       g.appendChild(box);
     }
@@ -434,10 +428,10 @@ function render() {
   $panes.appendChild(stage);
 }
 
-function makePaneBox(idx, isCard) {
+function makePaneBox(idx, isCard, fullHeight) {
   var c   = PC[idx % PC.length];
   var box = document.createElement('div');
-  box.className = 'pane-box' + (isCard ? ' card' : '');
+  box.className = 'pane-box' + (isCard ? ' card' : '') + (fullHeight ? ' full-height' : '');
   box.style.border = '1.5px solid ' + c.b;
   var num = document.createElement('div');
   num.className = 'pane-num';
